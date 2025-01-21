@@ -1,6 +1,8 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import 'models/auth_model.dart';
 import 'utils/dimens.dart';
 import 'widgets/main_app_bar.dart';
 import 'widgets/profile_image.dart';
@@ -10,9 +12,9 @@ class ProfilePage extends StatefulWidget {
   final VoidCallback onTapBack;
 
   const ProfilePage({
-    Key? key,
+    super.key,
     required this.onTapBack,
-  }) : super(key: key);
+  });
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -21,7 +23,10 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
-    return _content(context);
+    return ChangeNotifierProvider(
+      create: (_) => AuthModel(),
+      child: _content(context)
+    );
   }
 
   Scaffold _content(BuildContext context) {

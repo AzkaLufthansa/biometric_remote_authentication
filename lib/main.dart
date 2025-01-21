@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import 'login_page.dart';
+import 'utils/colors.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -27,7 +28,16 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: LoginPage()
+      theme: ThemeData(
+        brightness: Brightness.light,
+        primaryColor: AppColor.primary,
+        colorScheme: ThemeData().colorScheme.copyWith(
+          primary: AppColor.primary,
+          secondary: AppColor.lightPrimary,
+        ),
+      ),
+      home: LoginPage(),
+      
     );
   }
 }
