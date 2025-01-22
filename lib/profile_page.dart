@@ -24,7 +24,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => AuthModel(),
+      create: (_) => AuthModel()..checkBiometric(),
       child: _content(context)
     );
   }

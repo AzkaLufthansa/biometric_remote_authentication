@@ -12,12 +12,16 @@ class AuthModel with ChangeNotifier {
   String? _errorMessage;
   bool _isSuccessEnrolling = false;
   String? _enrollMessage;
+  bool _isCheckingBiometric = false;
+  bool _isBiometricActive = false;
 
   bool get isAuthenticated => _isAuthenticated;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isPasswordVerified => _isPasswordVerified;
   bool get isEnrollingLoading => _isEnrollingLoading;
+  bool get isCheckingBiometric => _isCheckingBiometric;
+  bool get isBiometricActive => _isBiometricActive;
 
   String? get enrollMessage => _enrollMessage;
   bool get isSuccessEnrolling => _isSuccessEnrolling;
@@ -38,7 +42,7 @@ class AuthModel with ChangeNotifier {
           'password': password
       };
 
-      var url = Uri.parse('https://f558-103-129-95-103.ngrok-free.app/auth/login');
+      var url = Uri.parse('https://3ad6-103-129-95-103.ngrok-free.app/auth/login');
       var response = await http.post(
         url, 
         headers: {
@@ -87,7 +91,7 @@ class AuthModel with ChangeNotifier {
       // Get token
       final token = await _getToken();
 
-      var url = Uri.parse('https://f558-103-129-95-103.ngrok-free.app/auth/verify_password');
+      var url = Uri.parse('https://3ad6-103-129-95-103.ngrok-free.app/auth/verify_password');
       var response = await http.post(
         url, 
         headers: {
@@ -115,7 +119,7 @@ class AuthModel with ChangeNotifier {
     }
   }
 
-  Future<void> activateBiometric(String publicKey) async {
+  Future<void> toggleBiometric(bool enable, {String? publicKey}) async {
     HttpWithMiddleware http = HttpWithMiddleware.build(middlewares: [
         HttpLogger(logLevel: LogLevel.BODY),
     ]);
@@ -125,29 +129,34 @@ class AuthModel with ChangeNotifier {
 
     try {
       await Future.delayed(Duration(seconds: 2));
-
-      final body = {
-          'publicKey': publicKey,
-      };
+      
+      Map<String, dynamic>? body;
+      if (enable) {
+        body = {
+            'publicKey': publicKey,
+        };
+      }
 
       // Get token
       final token = await _getToken();
 
+      final endpoint = enable ? 'activateBiometric' : 'disableBiometric';
       // TODO: Get User ID
-      var url = Uri.parse('https://f558-103-129-95-103.ngrok-free.app/auth/activateBiometric/5');
+      var url = Uri.parse('https://3ad6-103-129-95-103.ngrok-free.app/auth/$endpoint/5');
       var response = await http.post(
         url, 
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: jsonEncode(body),
+        body: body != null ? jsonEncode(body) : null,
       );
 
       if (response.statusCode == 200) {
         _isEnrollingLoading = false;
         _isSuccessEnrolling = true;
         _enrollMessage = null;
+        _isBiometricActive = enable;
       } else {
         _isEnrollingLoading = false;
         _enrollMessage = 'Invalid email or password';
@@ -158,6 +167,45 @@ class AuthModel with ChangeNotifier {
       _isSuccessEnrolling = false;
     } finally {
       _isEnrollingLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> checkBiometric() async {
+    HttpWithMiddleware http = HttpWithMiddleware.build(middlewares: [
+        HttpLogger(logLevel: LogLevel.BODY),
+    ]);
+    
+    _isCheckingBiometric = true;
+    notifyListeners();
+
+    try {
+      await Future.delayed(Duration(seconds: 2));
+
+      // Get token
+      final token = await _getToken();
+
+      // TODO: Get User ID
+      var url = Uri.parse('https://3ad6-103-129-95-103.ngrok-free.app/auth/check_biometric/5');
+      var response = await http.post(
+        url, 
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        _isCheckingBiometric = false;
+        _isBiometricActive = true;
+      } else {
+        _isCheckingBiometric = false;
+        _isPasswordVerified = false;
+      }
+    } catch (e) {
+      _isBiometricActive = false;
+    } finally {
+      _isCheckingBiometric = false;
       notifyListeners();
     }
   }

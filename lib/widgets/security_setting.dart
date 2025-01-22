@@ -22,8 +22,6 @@ class _SecuritySettingState extends State<SecuritySetting> {
   final TextEditingController _passwordController = TextEditingController();
   final FocusNode _passwordFocusNode = FocusNode();
 
-  bool _biometricEnabled = false;
-
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -52,18 +50,16 @@ class _SecuritySettingState extends State<SecuritySetting> {
                 builder: (context, model, child) {
                   return BiometricActivation(
                     label: 'Biometrik untuk Login', 
-                    enabled: _biometricEnabled,
-                    isLoading: false,
+                    enabled: model.isBiometricActive,
+                    isLoading: model.isCheckingBiometric,
                     onTap: () async {
                       final BiometricSignature biometricSignature = BiometricSignature();
 
                       // TODO:
                       // If biometric login active
-                      if (_biometricEnabled) {
+                      if (model.isBiometricActive) {
                         await biometricSignature.deleteKeys();
-                        setState(() {
-                          _biometricEnabled = false;
-                        });
+                        model.toggleBiometric(false);
                   
                         return;
                       }
@@ -110,9 +106,9 @@ class _SecuritySettingState extends State<SecuritySetting> {
                       _showBiometricActivationConfirmationBottomSheet(
                         context,
                         onDismiss: () {
-                          setState(() {
-                            _biometricEnabled = false;
-                          });
+                          // setState(() {
+                          //   _biometricEnabled = false;
+                          // });
                         },
                         onConfirm: (ctx) async {
                           Navigator.pop(ctx);
@@ -162,7 +158,7 @@ class _SecuritySettingState extends State<SecuritySetting> {
                   
                           // Enroll public key to the server
                           if (passwordVerify == true) {
-                            await model.activateBiometric(publicKey!);
+                            await model.toggleBiometric(true, publicKey: publicKey!);
                           } else {
                             await biometricSignature.deleteKeys();
                             return;
@@ -170,9 +166,9 @@ class _SecuritySettingState extends State<SecuritySetting> {
                   
                           // Prompt success enrolling fingerprint
                           if (model.isSuccessEnrolling) {
-                            setState(() {
-                              _biometricEnabled = true;
-                            });
+                            // setState(() {
+                            //   _biometricEnabled = true;
+                            // });
                             Fluttertoast.showToast(msg: 'Login dengan fingerprint berhasil diaktifkan!');
                           } else {
                             Fluttertoast.showToast(msg: 'Terjadi kesalahan!');
