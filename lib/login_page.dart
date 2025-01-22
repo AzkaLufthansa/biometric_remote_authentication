@@ -47,226 +47,203 @@ class _MyAppState extends State<LoginPage> {
     );
   }
 
-  Scaffold _content(BuildContext context) {
+  Widget _content(BuildContext context) {
     return Scaffold(
-    backgroundColor: AppColor.white,
-    body: Consumer<AuthModel>(
-      builder: (context, model, child) {
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            // Background
-            SizedBox(
-              width: double.infinity,
-              height: double.infinity,
-              child: Image.asset(
-                'assets/images/bg/bg_login_red.png',
-                fit: BoxFit.fill,
-              ),
-            ),
-
-
-            SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Logo Title
-                    const LoginLogoTitle(),
-
-                    Flexible(
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(
-                              child: Column(
-                                children: [
-                                  Text(
-                                    'Login ke akun\nAnda',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 25,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            const SizedBox(height: AppDimen.marginPaddingMedium),
-
-                            const SizedBox(
-                              child: Text(
-                                'Masukan akun Anda disini',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: AppColor.lightGrey3,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                                  
-                            const SizedBox(height: 50,),
-
-                            // Email Textfield
-                            TextFieldLogin(
-                              focusNode: _emailFocusNode,
-                              controller: _emailController,
-                              label: 'Email',
-                              textInputAction: TextInputAction.next,
-                              hintText: 'Email',
-                              icon: 'assets/images/icon/ic_username.png',
-                            ),
-                      
-                            const SizedBox(height: AppDimen.marginPaddingSmall),
-                            
-                            // Password Textfield
-                            TextFieldLogin(
-                              focusNode: _passwordFocusNode,
-                              controller: _passwordController,
-                              label: 'Password',
-                              textInputAction: TextInputAction.send,
-                              hintText: 'Password',
-                              onFieldSubmitted: (value) async {
-                                // To prevent multiple click
-                                if (!model.isLoading) {
-                                  _emailFocusNode.unfocus();
-                                  _passwordFocusNode.unfocus();
-              
-                                  await model.login(
-                                    _emailController.text, 
-                                    _passwordController.text
-                                  );
-
-                                  if (model.isAuthenticated) {
-                                     // Navigate to Main Page
-                                     Navigator.pushReplacement(
-                                       // ignore: use_build_context_synchronously
-                                       context,
-                                       MaterialPageRoute(
-                                         builder: (context) => MainPage(),
-                                       ),
-                                     );
-                                  } else {
-                                    Fluttertoast.showToast(msg: 'Login failed! ${model.errorMessage}');
-                                  }
-                                }
-                              },
-                              icon: 'assets/images/icon/ic_password.png',
-                              isPassword: true,
-                              obscureText: _isObscure,
-                              togglePassword: () => setState(() => _isObscure = !_isObscure),
-                            ),
-
-                            const SizedBox(height: AppDimen.marginPaddingSmall,),
-
-                            Text(
-                              'dummy app',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColor.lightGrey3
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Button
-                    LoginButton(
-                      onTap: () async {
-                        // To prevent multiple click
-                        if (!model.isLoading && !model.isCheckingBiometric) {
-                          _emailFocusNode.unfocus();
-                          _passwordFocusNode.unfocus();
-      
-                          if (!model.isBiometricActive) {
-                            await model.login(
-                              _emailController.text, 
-                              _passwordController.text
-                            );
-                          } else {
-                            final BiometricSignature biometricSignature = BiometricSignature();
-
-                            final biometrics = await biometricSignature.biometricAuthAvailable();
-                            if (!biometrics!.contains("none, ")) {
-                              try {
-                                final String? signature = await biometricSignature.createSignature(
-                                // TODO: ID
-                                  options: {
-                                    "payload": "5",
-                                    "promptMessage": "You are Welcome!"
-                                  }
-                                );
-
-                                if (signature != null) {
-                                  // TODO: ID
-                                  await model.loginBiometric(5, signature);
-                                } else {
-                                  Fluttertoast.showToast(msg: 'Gagal mengambil sidik jari!');
-                                }
-                              } on PlatformException catch (e) {
-                                debugPrint(e.message);
-                                debugPrint(e.code);
-                              }
-                            }
-                          }
-
-                          if (model.isAuthenticated) {
-                              // Navigate to Main Page
-                              Navigator.pushReplacement(
-                                // ignore: use_build_context_synchronously
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => MainPage(),
-                                ),
-                              );
-                          } else {
-                            Fluttertoast.showToast(msg: 'Login failed! ${model.isBiometricActive ? '' : model.errorMessage}');
-                          }
-                        }
-                      },
-                      isLoading: model.isAuthenticated,
-                    ),
-                  ],
+      backgroundColor: AppColor.white,
+      body: Consumer<AuthModel>(
+        builder: (context, model, child) {
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              // Background
+              SizedBox(
+                width: double.infinity,
+                height: double.infinity,
+                child: Image.asset(
+                  'assets/images/bg/bg_login_red.png',
+                  fit: BoxFit.fill,
                 ),
               ),
-            ),
 
-            model.isLoading
-              ? Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black26
-                  ),
-                )
-              : const SizedBox(),
 
-            model.isLoading
-              ? Center(
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                      padding: const EdgeInsets.all(AppDimen.marginPaddingMedium),
-                      decoration: BoxDecoration(
-                        color: AppColor.white,
-                        borderRadius: BorderRadius.circular(AppDimen.radiusMedium),
-                      ),
-                      child: Center(
-                        child: SpinKitCircle(
-                          size: 30,
-                          color: AppColor.primary,
+              SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Logo Title
+                      const LoginLogoTitle(),
+
+                      Flexible(
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'Login ke akun\nAnda',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 25,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(height: AppDimen.marginPaddingMedium),
+
+                              const SizedBox(
+                                child: Text(
+                                  'Masukan akun Anda disini',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: AppColor.lightGrey3,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                                    
+                              const SizedBox(height: 50,),
+
+                              // Email Textfield
+                              TextFieldLogin(
+                                focusNode: _emailFocusNode,
+                                controller: _emailController,
+                                label: 'Email',
+                                textInputAction: TextInputAction.next,
+                                hintText: 'Email',
+                                icon: 'assets/images/icon/ic_username.png',
+                              ),
+                        
+                              const SizedBox(height: AppDimen.marginPaddingSmall),
+                              
+                              // Password Textfield
+                              TextFieldLogin(
+                                focusNode: _passwordFocusNode,
+                                controller: _passwordController,
+                                label: 'Password',
+                                textInputAction: TextInputAction.send,
+                                hintText: 'Password',
+                                onFieldSubmitted: (value) => _login(model),
+                                icon: 'assets/images/icon/ic_password.png',
+                                isPassword: true,
+                                obscureText: _isObscure,
+                                togglePassword: () => setState(() => _isObscure = !_isObscure),
+                              ),
+
+                              const SizedBox(height: AppDimen.marginPaddingSmall,),
+
+                              Text(
+                                'dummy app',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColor.lightGrey3
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      )
+                      ),
+
+                      // Button
+                      LoginButton(
+                        onTap: () => _login(model),
+                        isLoading: model.isAuthenticated,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              model.isLoading
+                ? Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black26
                     ),
-                )
-              : const SizedBox()
-          ],
+                  )
+                : const SizedBox(),
+
+              model.isLoading
+                ? Center(
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                        padding: const EdgeInsets.all(AppDimen.marginPaddingMedium),
+                        decoration: BoxDecoration(
+                          color: AppColor.white,
+                          borderRadius: BorderRadius.circular(AppDimen.radiusMedium),
+                        ),
+                        child: Center(
+                          child: SpinKitCircle(
+                            size: 30,
+                            color: AppColor.primary,
+                          ),
+                        )
+                      ),
+                  )
+                : const SizedBox()
+            ],
+          );
+        }
+      )
+    );
+  }
+
+  void _login(model) async {
+    if (!model.isLoading && !model.isCheckingBiometric) {
+      _emailFocusNode.unfocus();
+      _passwordFocusNode.unfocus();
+
+      if (!model.isBiometricActive) {
+        await model.login(
+          _emailController.text, 
+          _passwordController.text
         );
+      } else {
+        final BiometricSignature biometricSignature = BiometricSignature();
+
+        final biometrics = await biometricSignature.biometricAuthAvailable();
+        if (!biometrics!.contains("none, ")) {
+          try {
+            final userId = await model.userId;
+
+            final String? signature = await biometricSignature.createSignature(
+              options: {
+                "payload": '$userId',
+                "promptMessage": "You are Welcome!"
+              }
+            );
+
+            if (signature != null) {
+              await model.loginBiometric(userId!, signature);
+            } else {
+              Fluttertoast.showToast(msg: 'Gagal mengambil sidik jari!');
+            }
+          } on PlatformException catch (e) {
+            debugPrint(e.message);
+            debugPrint(e.code);
+          }
+        }
       }
-    )
-  );
+
+      if (model.isAuthenticated) {
+          // Navigate to Main Page
+          Navigator.pushReplacement(
+            // ignore: use_build_context_synchronously
+            context,
+            MaterialPageRoute(
+              builder: (context) => MainPage(),
+            ),
+          );
+      } else {
+        Fluttertoast.showToast(msg: 'Login failed! ${model.isBiometricActive ? '' : model.errorMessage}');
+      }
+    }
   }
 }

@@ -55,11 +55,10 @@ class _SecuritySettingState extends State<SecuritySetting> {
                     onTap: () async {
                       final BiometricSignature biometricSignature = BiometricSignature();
 
-                      // TODO:
                       // If biometric login active
                       if (model.isBiometricActive) {
                         await biometricSignature.deleteKeys();
-                        model.toggleBiometric(false);
+                        await model.toggleBiometric(false);
                   
                         return;
                       }
@@ -141,8 +140,7 @@ class _SecuritySettingState extends State<SecuritySetting> {
                                 isLoading: model.isLoading,
                                 onSubmit: () async {
                                   if (_formKey.currentState!.validate()) {
-                                    // TODO:
-                                    await model.verifyPassword('user', _passwordController.text);
+                                    await model.verifyPassword(_passwordController.text);
 
                                     if (model.isPasswordVerified) {
                                       Navigator.pop(ctx2, true);

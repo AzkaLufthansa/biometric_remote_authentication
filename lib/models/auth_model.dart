@@ -26,6 +26,10 @@ class AuthModel with ChangeNotifier {
   String? get enrollMessage => _enrollMessage;
   bool get isSuccessEnrolling => _isSuccessEnrolling;
 
+  Future<int?> get userId async {
+    return await _getId();
+  }
+
   Future<void> login(String email, String password) async {
     HttpWithMiddleware http = HttpWithMiddleware.build(middlewares: [
         HttpLogger(logLevel: LogLevel.BODY),
@@ -53,7 +57,7 @@ class AuthModel with ChangeNotifier {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        _saveToken(data['data']['token']);
+        _saveData(data['data']);
 
         _isLoading = false;
         _isAuthenticated = true;
@@ -72,7 +76,7 @@ class AuthModel with ChangeNotifier {
     }
   }
 
-  Future<void> verifyPassword(String email, String password) async {
+  Future<void> verifyPassword(String password) async {
     HttpWithMiddleware http = HttpWithMiddleware.build(middlewares: [
         HttpLogger(logLevel: LogLevel.BODY),
     ]);
@@ -83,8 +87,10 @@ class AuthModel with ChangeNotifier {
     try {
       await Future.delayed(Duration(seconds: 2));
 
+      final userId = await _getId();
+
       final body = {
-          'username': email,
+          'userId': userId,
           'password': password
       };
 
@@ -139,10 +145,10 @@ class AuthModel with ChangeNotifier {
 
       // Get token
       final token = await _getToken();
+      final id = await _getId();
 
       final endpoint = enable ? 'activateBiometric' : 'disableBiometric';
-      // TODO: Get User ID
-      var url = Uri.parse('https://3ad6-103-129-95-103.ngrok-free.app/auth/$endpoint/5');
+      var url = Uri.parse('https://3ad6-103-129-95-103.ngrok-free.app/auth/$endpoint/$id');
       var response = await http.post(
         url, 
         headers: {
@@ -184,9 +190,9 @@ class AuthModel with ChangeNotifier {
 
       // Get token
       final token = await _getToken();
+      final id = await _getId();
 
-      // TODO: Get User ID
-      var url = Uri.parse('https://3ad6-103-129-95-103.ngrok-free.app/auth/check_biometric/5');
+      var url = Uri.parse('https://3ad6-103-129-95-103.ngrok-free.app/auth/check_biometric/$id');
       var response = await http.post(
         url, 
         headers: {
@@ -215,21 +221,30 @@ class AuthModel with ChangeNotifier {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       return prefs.getString('token');
     } catch (e) {
-      throw Exception('Failed to save token!');
+      throw Exception('Failed to get token!');
     }
   }
 
-  Future<void> _saveToken(token) async {
+  Future<int?> _getId() async {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('token', token);
+      return prefs.getInt('id');
+    } catch (e) {
+      throw Exception('Failed to get id!');
+    }
+  }
+
+  Future<void> _saveData(data) async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', data['token']);
+      await prefs.setInt('id', data['user']['id']);
     } catch (e) {
       throw Exception('Failed to save token!');
     }
   }
 
   Future<void> loginBiometric(int userId, String signature) async {
-    print('SIGNATURE PRINT: $signature');
     HttpWithMiddleware http = HttpWithMiddleware.build(middlewares: [
         HttpLogger(logLevel: LogLevel.BODY),
     ]);
@@ -256,7 +271,7 @@ class AuthModel with ChangeNotifier {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        _saveToken(data['data']['token']);
+        _saveData(data['data']);
 
         _isLoading = false;
         _isAuthenticated = true;
