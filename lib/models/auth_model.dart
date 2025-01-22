@@ -227,4 +227,51 @@ class AuthModel with ChangeNotifier {
       throw Exception('Failed to save token!');
     }
   }
+
+  Future<void> loginBiometric(int userId, String signature) async {
+    print('SIGNATURE PRINT: $signature');
+    HttpWithMiddleware http = HttpWithMiddleware.build(middlewares: [
+        HttpLogger(logLevel: LogLevel.BODY),
+    ]);
+    
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await Future.delayed(Duration(seconds: 2));
+
+      final body = {
+          'userId': userId,
+          'signature': signature
+      };
+
+      var url = Uri.parse('https://3ad6-103-129-95-103.ngrok-free.app/auth/biometricLogin');
+      var response = await http.post(
+        url, 
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _saveToken(data['data']['token']);
+
+        _isLoading = false;
+        _isAuthenticated = true;
+        _errorMessage = null;
+      } else {
+        _isLoading = false;
+        _errorMessage = 'Invalid email or password';
+        _isAuthenticated = false;
+      }
+    } catch (e) {
+      _errorMessage = 'An error occurred: $e';
+      _isAuthenticated = false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

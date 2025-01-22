@@ -1,4 +1,6 @@
+import 'package:biometric_signature/biometric_signature.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
@@ -40,7 +42,7 @@ class _MyAppState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => AuthModel(),
+      create: (_) => AuthModel()..checkBiometric(),
       child: _content(context)
     );
   }
@@ -177,14 +179,41 @@ class _MyAppState extends State<LoginPage> {
                     LoginButton(
                       onTap: () async {
                         // To prevent multiple click
-                        if (!model.isLoading) {
+                        if (!model.isLoading && !model.isCheckingBiometric) {
                           _emailFocusNode.unfocus();
                           _passwordFocusNode.unfocus();
       
-                          await model.login(
-                            _emailController.text, 
-                            _passwordController.text
-                          );
+                          if (!model.isBiometricActive) {
+                            await model.login(
+                              _emailController.text, 
+                              _passwordController.text
+                            );
+                          } else {
+                            final BiometricSignature biometricSignature = BiometricSignature();
+
+                            final biometrics = await biometricSignature.biometricAuthAvailable();
+                            if (!biometrics!.contains("none, ")) {
+                              try {
+                                final String? signature = await biometricSignature.createSignature(
+                                // TODO: ID
+                                  options: {
+                                    "payload": "5",
+                                    "promptMessage": "You are Welcome!"
+                                  }
+                                );
+
+                                if (signature != null) {
+                                  // TODO: ID
+                                  await model.loginBiometric(5, signature);
+                                } else {
+                                  Fluttertoast.showToast(msg: 'Gagal mengambil sidik jari!');
+                                }
+                              } on PlatformException catch (e) {
+                                debugPrint(e.message);
+                                debugPrint(e.code);
+                              }
+                            }
+                          }
 
                           if (model.isAuthenticated) {
                               // Navigate to Main Page
@@ -196,7 +225,7 @@ class _MyAppState extends State<LoginPage> {
                                 ),
                               );
                           } else {
-                            Fluttertoast.showToast(msg: 'Login failed! ${model.errorMessage}');
+                            Fluttertoast.showToast(msg: 'Login failed! ${model.isBiometricActive ? '' : model.errorMessage}');
                           }
                         }
                       },
